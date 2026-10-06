@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, List, Search } from "lucide-react";
 import { getFihrisForBook, type FihrisEntry } from "../data/fihris";
+import { addHasyiah, loadHasyiah, type HasyiahNote, type HasyiahCategory } from "../data/hasyiah";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -24,6 +25,12 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
   const [animating, setAnimating] = useState(false);
   const [showFihris, setShowFihris] = useState(false);
   const [fihrisQuery, setFihrisQuery] = useState("");
+  const [notes, setNotes] = useState<HasyiahNote[]>(() => loadHasyiah());
+  const [showHasyiah, setShowHasyiah] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [quoteText, setQuoteText] = useState("");
+  const [noteCategory, setNoteCategory] = useState<HasyiahCategory>("faedah");
+  const [selectedNote, setSelectedNote] = useState<HasyiahNote | null>(null);
   const pointerId = useRef<number | null>(null);
   const startX = useRef(0);
   const turnWidth = useRef(1);
@@ -64,6 +71,13 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
   const canPrev = page > 1;
   const fihris = getFihrisForBook(title);
   const filteredFihris = fihris.filter((item) => item.title.includes(fihrisQuery.trim()));
+  const pageNotes = notes.filter(n => n.bookId === title && n.pdfPage === page);
+  const saveNote = () => {
+    if (!noteText.trim()) return;
+    addHasyiah({ bookId: title, pdfPage: page, x: 0.5, y: 0.5, quotedText: quoteText.trim(), note: noteText.trim(), category: noteCategory });
+    setNotes(loadHasyiah()); setNoteText(""); setQuoteText(""); setShowHasyiah(false);
+  };
+
   const goToFihris = (item: FihrisEntry) => {
     const target = item.pdfPage % 2 === 0 ? item.pdfPage - 1 : item.pdfPage;
     setPage(Math.max(1, target));
@@ -152,11 +166,21 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
         <strong>{title}</strong>
         <div className="readercontrols">
           <button onClick={() => setScale((s) => Math.max(.7, s - .1))}><ZoomOut size={17} /></button>
-          {fihris.length > 0 && <button className="fihrisToggle" onClick={() => setShowFihris(true)}><List size={17} /> Fihris</button>}
+          {fihris.length > 0 && <button className="fihrisToggle" onClick={() => setShowFihris(true)}><List size={17} /> Fihris</button>
+          <button className="fihrisToggle" onClick={() => setShowHasyiah(true)}>✎ Hasyiah{pageNotes.length ? ` (${pageNotes.length})` : ""}</button>}
           <span>{page}–{Math.min(page + 1, total)} / {total}</span>
           <button onClick={() => setScale((s) => Math.min(1.7, s + .1))}><ZoomIn size={17} /></button>
         </div>
       </header>
+
+      {showHasyiah && (
+        <div className="fihrisOverlay" onClick={() => setShowHasyiah(false)}><aside className="fihrisPanel" dir="rtl" onClick={e=>e.stopPropagation()}>
+          <div className="fihrisHead"><div><span>حاشية</span><strong>Hasyiah PDF {page}</strong></div><button onClick={()=>setShowHasyiah(false)}><X size={19}/></button></div>
+          <div className="hasyiahForm"><textarea value={quoteText} onChange={e=>setQuoteText(e.target.value)} placeholder="Ibarat yang diberi catatan..." /><textarea value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Tulis Hasyiah..." /><select value={noteCategory} onChange={e=>setNoteCategory(e.target.value as HasyiahCategory)}><option value="faedah">Faedah</option><option value="syarah">Syarah & uraian</option><option value="makna">Makna & mufradat</option><option value="dalil">Dalil & rujukan</option><option value="muzakarah">Pertanyaan muzakarah</option><option value="tanbih">تنبيه</option><option value="isyak">إشكال</option><option value="jawab">جواب</option></select><button className="primary" onClick={saveNote}>Simpan Hasyiah</button></div>
+          {pageNotes.length>0 && <div className="fihrisList">{pageNotes.map(n=><button className="fihrisItem" key={n.id} onClick={()=>setSelectedNote(n)}><span className="fihrisText">✦ {n.note}</span><small>{n.category} · PDF {n.pdfPage}</small></button>)}</div>}
+        </aside></div>
+      )}
+      {selectedNote && <div className="fihrisOverlay" onClick={()=>setSelectedNote(null)}><aside className="fihrisPanel" dir="rtl" onClick={e=>e.stopPropagation()}><div className="fihrisHead"><div><span>الحاشية</span><strong>Detail Hasyiah</strong></div><button onClick={()=>setSelectedNote(null)}><X size={19}/></button></div><p className="hasyiahQuote">{selectedNote.quotedText || "Tidak ada kutipan ibarat."}</p><p className="hasyiahBody">{selectedNote.note}</p></aside></div>}
 
       {showFihris && (
         <div className="fihrisOverlay" onClick={() => setShowFihris(false)}>
