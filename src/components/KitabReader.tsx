@@ -70,21 +70,27 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
       setTotal(pdf.numPages);
 
       const render = async (n: number, c: HTMLCanvasElement | null) => {
-        if (!c || n < 1 || n > pdf!.numPages) return;
+        if (!c || n < 1 || n > pdf!.numPages || cancelled) return;
         const p = await pdf!.getPage(n);
+        if (cancelled) return;
         const v = p.getViewport({ scale });
-        c.width = v.width;
-        c.height = v.height;
-        await p.render({ canvasContext: c.getContext("2d")!, viewport: v, canvas: c }).promise;
+        c.width = Math.ceil(v.width);
+        c.height = Math.ceil(v.height);
+        const ctx = c.getContext("2d", { alpha: false });
+        if (!ctx) throw new Error("Canvas 2D context tidak tersedia");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, c.width, c.height);
+        const task = p.render({ canvasContext: ctx, viewport: v });
+        await task.promise;
       };
 
-      await Promise.all([
-        render(page, right.current),
-        render(page + 1, left.current),
-        render(page + 2, nextRight.current),
-        render(page + 3, nextLeft.current),
-      ]);
-      setLoading(false);
+      // Android WebView can be unreliable when several PDF.js canvas renders
+      // run concurrently. Render each page sequentially for deterministic output.
+      await render(page, right.current);
+      await render(page + 1, left.current);
+      await render(page + 2, nextRight.current);
+      await render(page + 3, nextLeft.current);
+      if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
