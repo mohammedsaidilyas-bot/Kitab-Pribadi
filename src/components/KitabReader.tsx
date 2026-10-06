@@ -4,6 +4,7 @@ import { getFihrisForBook } from "../data/fihris";
 import { addHasyiah, loadHasyiah, type HasyiahNote, type HasyiahCategory } from "../data/hasyiah";
 import { loadAutoFihris } from "../data/autoFihris";
 import { loadEngineFihris } from "../data/fihrisEngine";
+import { buildFihrisHierarchy, type FihrisNode } from "../data/fihrisHierarchy";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -38,6 +39,7 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
   const [showFihris, setShowFihris] = useState(false);
   const [fihrisQuery, setFihrisQuery] = useState("");
   const [fihrisTab, setFihrisTab] = useState<FihrisTab>("all");
+  const [collapsedFihris, setCollapsedFihris] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<HasyiahNote[]>(() => loadHasyiah());
   const [showHasyiah, setShowHasyiah] = useState(false);
   const [noteText, setNoteText] = useState("");
@@ -85,7 +87,7 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
   const verifiedFihris = loadEngineFihris(bookId);
   const storedFihris = loadAutoFihris(bookId);
   const fihris = verifiedFihris.length > 0 ? verifiedFihris : (storedFihris.length > 0 ? storedFihris : getFihrisForBook(title));
-  const filteredFihris = fihris.filter((item) => (fihrisTab === "all" || fihrisType(item.title) === fihrisTab) && item.title.includes(fihrisQuery.trim()));
+  const hierarchy = buildFihrisHierarchy(fihris);\n  const hiddenByParent = (node: FihrisNode) => { let p = node.parentId; while (p) { if (collapsedFihris.has(p)) return true; p = hierarchy.find(x => x.id === p)?.parentId; } return false; };\n  const filteredFihris = hierarchy.filter((item) => !hiddenByParent(item) && (fihrisTab === "all" || fihrisType(item.title) === fihrisTab) && item.title.includes(fihrisQuery.trim()));
   const pageNotes = notes.filter(n => n.bookId === title && n.pdfPage === page);
   const saveNote = () => {
     if (!noteText.trim()) return;
