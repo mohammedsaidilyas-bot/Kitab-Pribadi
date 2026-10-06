@@ -118,6 +118,8 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    // Controls (Fihris/zoom/close/arrows) must not start a page turn.
+    if ((e.target as HTMLElement).closest("button,input,label")) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     const rect = e.currentTarget.getBoundingClientRect();
     const localX = e.clientX - rect.left;
