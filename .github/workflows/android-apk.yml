@@ -25,7 +25,7 @@ jobs:
       - run: npx cap add android
       - run: npx cap sync android
       - run: chmod +x android/gradlew
-      - run: ./android/gradlew assembleDebug
+      - run: cd android && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: kitab-pribadi-debug-apk
