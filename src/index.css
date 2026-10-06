@@ -34,3 +34,5 @@
 @media(max-width:800px){.fihrisTabs{gap:6px}.fihrisTab{padding:8px 10px;font-size:12px}}
 
 .fihrisItem.depth-0{border-right:3px solid #9a6a35;background:#2a1b10}.fihrisItem.depth-1{margin-right:14px;border-right:2px solid #72502f}.fihrisItem.depth-2{margin-right:28px}.fihrisItem.depth-3{margin-right:42px;border-right:1px dashed #6b4c30}.fihrisItem.depth-0 .fihrisText{font-weight:700;color:#f0d6a8}.fihrisItem.depth-1 .fihrisText{font-weight:700}.fihrisItem.depth-2 .fihrisText{font-size:17px}.fihrisItem.depth-3 .fihrisText{font-size:16px;color:#d7c1a4}
+
+.fihrisCollapse{display:inline-grid;place-items:center;width:21px;height:21px;margin-right:7px;padding:0;border:1px solid #75502e;border-radius:5px;background:#332216;color:#e6c796;font:700 13px Inter,sans-serif;vertical-align:middle}.fihrisCollapse:hover{background:#8a5b32}.fihrisItem.depth-0{padding-right:10px}.fihrisItem.depth-1{padding-right:24px}.fihrisItem.depth-2{padding-right:38px}.fihrisItem.depth-3{padding-right:52px}
