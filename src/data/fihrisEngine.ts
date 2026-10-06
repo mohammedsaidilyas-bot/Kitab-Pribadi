@@ -9,7 +9,7 @@ export type EngineFihrisEntry = {
   pdfPage: number;
   status: FihrisStatus;
   confidence: number;
-  sourcePage: number;
+  sourcePage: number;\n  targetPdfPage?: number;\n  validation?: "exact" | "near" | "unverified";
 };
 
 const STORAGE = "kitab-pribadi-fihris-v2";
@@ -83,7 +83,83 @@ function splitLines(text: string) {
   return text.split(/\r?\n/).map(x => x.replace(/\s+/g, " ").trim()).filter(Boolean);
 }
 
-function isUsefulHeading(line: string) {
+
+
+function headingTokens(title: string) {
+  return normalizeArabic(title)
+    .replace(/^(كتاب|الكتاب|باب|الأبواب|فصل|الفصل|فرع|الفروع|تنبيه|فائدة|مهم|مهمة|ملاحظة|خاتمة|الخاتمة)\s*/, "")
+    .split(/\s+/)
+    .filter(x => x.length >= 3);
+}
+
+function titleMatchesPage(title: string, pageText: string) {
+  const page = normalizeArabic(pageText);
+  const tokens = headingTokens(title);
+  if (!tokens.length) return false;
+  const hits = tokens.filter(token => page.includes(token)).length;
+  return hits >= Math.max(1, Math.ceil(tokens.length * 0.55));
+}
+
+function numbersFromText(text: string) {
+  const normalized = normalizeDigits(text);
+  return [...normalized.matchAll(/(?:^|\s)(\d{1,4})(?=\s|$)/g)]
+    .map(m => Number(m[1]))
+    .filter(n => n > 0 && n < 10000);
+}
+
+async function extractTextPage(pdf: pdfjsLib.PDFDocumentProxy, pageNo: number) {
+  const page = await pdf.getPage(pageNo);
+  const content = await page.getTextContent();
+  return content.items.map(item => "str" in item ? item.str : "").join(" ");
+}
+
+async function buildPrintedPageMap(pdf: pdfjsLib.PDFDocumentProxy) {
+  const map = new Map<number, number>();
+  for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
+    const text = await extractTextPage(pdf, pageNo);
+    const nums = numbersFromText(text);
+    const plausible = nums.filter(n => n <= pdf.numPages + 100);
+    if (plausible.length) {
+      // Prefer the final plausible number: page numbers are commonly at a footer/header.
+      map.set(plausible[plausible.length - 1], pageNo);
+    }
+  }
+  return map;
+}
+
+async function validateEntry(
+  pdf: pdfjsLib.PDFDocumentProxy,
+  worker: Worker,
+  entry: EngineFihrisEntry,
+  pageMap: Map<number, number>
+) {
+  if (!entry.printedPage) return { ...entry, validation: "unverified" as const, confidence: 0.35 };
+
+  const exact = pageMap.get(entry.printedPage);
+  const candidates = exact
+    ? [exact, exact - 1, exact + 1].filter(p => p >= 1 && p <= pdf.numPages)
+    : [];
+
+  for (const candidate of candidates) {
+    const text = await extractTextPage(pdf, candidate);
+    if (titleMatchesPage(entry.title, text)) {
+      return { ...entry, pdfPage: candidate, targetPdfPage: candidate, status: "verified" as const, validation: candidate === exact ? "exact" as const : "near" as const, confidence: candidate === exact ? 0.98 : 0.9 };
+    }
+  }
+
+  // Scanned pages may have no PDF text. OCR only a small candidate window.
+  if (exact) {
+    for (const candidate of candidates) {
+      const ocr = await recognize(worker, await pageImage(pdf, candidate, 1.4));
+      if (titleMatchesPage(entry.title, ocr)) {
+        return { ...entry, pdfPage: candidate, targetPdfPage: candidate, status: "verified" as const, validation: candidate === exact ? "exact" as const : "near" as const, confidence: candidate === exact ? 0.94 : 0.86 };
+      }
+    }
+  }
+
+  return { ...entry, pdfPage: exact || entry.pdfPage, targetPdfPage: exact, status: "review" as const, validation: "unverified" as const, confidence: exact ? 0.62 : 0.35 };
+}
+\nfunction isUsefulHeading(line: string) {
   const kind = headingKind(line);
   return Boolean(kind && kind !== "toc" && line.length >= 3 && line.length <= 220);
 }
@@ -158,8 +234,16 @@ export async function buildVerifiedFihris(bookId: string, pdfUrl: string) {
       }
     }
 
-    saveEngineFihris(bookId, entries);
-    return { entries, tocFound: true };
+    // Build a real printed-page → PDF-page map before accepting any target.
+    // For image-only PDFs this map may be sparse; those entries remain review-only.
+    const pageMap = await buildPrintedPageMap(pdf);
+    const validated: EngineFihrisEntry[] = [];
+    for (const entry of entries) {
+      validated.push(await validateEntry(pdf, worker, entry, pageMap));
+    }
+
+    saveEngineFihris(bookId, validated);
+    return { entries: validated, tocFound: true };
   } finally {
     await worker.terminate();
     await pdf.destroy();
