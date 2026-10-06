@@ -163,6 +163,30 @@ async function validateEntry(
   return { ...entry, pdfPage: exact || entry.pdfPage, targetPdfPage: exact, status: "review" as const, validation: "unverified" as const, confidence: exact ? 0.62 : 0.35 };
 }
 
+function pageMapAnchorFromEntry(entry: EngineFihrisEntry) {
+  return entry.printedPage && entry.pdfPage && entry.pdfPage !== entry.sourcePage
+    ? { printedPage: entry.printedPage, pdfPage: entry.pdfPage }
+    : null;
+}
+
+function derivePageCalibration(anchors: Array<{ printedPage: number; pdfPage: number }>) {
+  const counts = new Map<number, number>();
+  for (const anchor of anchors) {
+    const offset = anchor.pdfPage - anchor.printedPage;
+    counts.set(offset, (counts.get(offset) || 0) + 1);
+  }
+  let bestOffset = 0;
+  let bestCount = 0;
+  for (const [offset, count] of counts) {
+    if (count > bestCount) {
+      bestOffset = offset;
+      bestCount = count;
+    }
+  }
+  const confidence = anchors.length ? bestCount / anchors.length : 0;
+  return bestCount >= 2 && confidence >= 0.6 ? { offset: bestOffset, confidence } : null;
+}
+
 function isUsefulHeading(line: string) {
   const kind = headingKind(line);
   return Boolean(kind && kind !== "toc" && line.length >= 3 && line.length <= 220);
@@ -238,7 +262,7 @@ export async function buildVerifiedFihris(bookId: string, pdfUrl: string) {
       }
     }
 
-    // Build a real printed-page → PDF-page map before accepting any target.
+    // Calibrate a dominant printed-page offset from several observed anchors.\n    // This is only a calibration hint; title matching still has final authority.\n    const anchors = entries\n      .map(e => pageMapAnchorFromEntry(e))\n      .filter((x): x is { printedPage: number; pdfPage: number } => Boolean(x));\n    const calibration = derivePageCalibration(anchors);\n\n    // Build a real printed-page → PDF-page map before accepting any target.
     // For image-only PDFs this map may be sparse; those entries remain review-only.
     const pageMap = await buildPrintedPageMap(pdf);
     const validated: EngineFihrisEntry[] = [];
