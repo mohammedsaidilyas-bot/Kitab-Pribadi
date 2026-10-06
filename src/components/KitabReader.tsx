@@ -95,8 +95,9 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
     setNotes(loadHasyiah()); setNoteText(""); setQuoteText(""); setShowHasyiah(false);
   };
 
-  const goToFihris = (item: { pdfPage: number }) => {
-    const target = item.pdfPage % 2 === 0 ? item.pdfPage - 1 : item.pdfPage;
+  const goToFihris = (item: { pdfPage: number; targetPdfPage?: number }) => {
+    const resolved = item.targetPdfPage ?? item.pdfPage;
+    const target = resolved % 2 === 0 ? resolved - 1 : resolved;
     setPage(Math.max(1, target));
     setShowFihris(false);
   };
