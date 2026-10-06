@@ -77,3 +77,21 @@ export function getFihrisForBook(title: string): FihrisEntry[] {
   const normalized = title.replace(/\.pdf$/i, "").trim();
   return /نهاية\s+الزين/i.test(normalized) ? ENTRIES : [];
 }
+
+
+export type FihrisRegressionCase = FihrisEntry & { expectedOffset: number };
+
+export const NAYATUZ_ZAIN_REGRESSION: FihrisRegressionCase[] = ENTRIES
+  .filter(entry => entry.title !== "فهرس المحتويات")
+  .map(entry => ({ ...entry, expectedOffset: entry.pdfPage - entry.printedPage }));
+
+export function validateFihrisRegression(entries: FihrisEntry[]) {
+  const failures: Array<{ title: string; expected: number; actual?: number }> = [];
+  for (const expected of NAYATUZ_ZAIN_REGRESSION) {
+    const actual = entries.find(e => e.title === expected.title && e.printedPage === expected.printedPage);
+    if (!actual || actual.pdfPage - actual.printedPage !== expected.expectedOffset) {
+      failures.push({ title: expected.title, expected: expected.pdfPage, actual: actual?.pdfPage });
+    }
+  }
+  return { passed: failures.length === 0, checked: NAYATUZ_ZAIN_REGRESSION.length, failures };
+}
