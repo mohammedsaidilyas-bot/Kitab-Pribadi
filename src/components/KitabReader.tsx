@@ -9,6 +9,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 type Props = { title: string; bookId: string; pdfUrl: string; onClose: () => void };
 type TurnDirection = "next" | "prev" | null;
+type FihrisTab = "all" | "kitab" | "bab" | "fasal" | "furu" | "tanbih";
+
+function fihrisType(title: string): FihrisTab {
+  if (/^(تنبيه|فائدة|مهمة|مهم)/.test(title)) return "tanbih";
+  if (/^(فرع|فروع)/.test(title)) return "furu";
+  if (/^(فصل)/.test(title)) return "fasal";
+  if (/^(باب|أبواب)/.test(title)) return "bab";
+  if (/^(كتاب|الكتاب)/.test(title)) return "kitab";
+  return "all";
+}
 
 export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
   const left = useRef<HTMLCanvasElement>(null);
@@ -26,6 +36,7 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
   const [animating, setAnimating] = useState(false);
   const [showFihris, setShowFihris] = useState(false);
   const [fihrisQuery, setFihrisQuery] = useState("");
+  const [fihrisTab, setFihrisTab] = useState<FihrisTab>("all");
   const [notes, setNotes] = useState<HasyiahNote[]>(() => loadHasyiah());
   const [showHasyiah, setShowHasyiah] = useState(false);
   const [noteText, setNoteText] = useState("");
@@ -214,11 +225,17 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
               <Search size={16} />
               <input value={fihrisQuery} onChange={(e) => setFihrisQuery(e.target.value)} placeholder="Cari bab atau فصل..." />
             </label>
+            <div className="fihrisTabs" dir="ltr">
+              {([["all","📚","Semua"],["kitab","📗","Kitab"],["bab","📙","Bab"],["fasal","📘","Fasal"],["furu","📕","Furu'"],["tanbih","💡","Tanbih & Muhimmat"]] as [FihrisTab,string,string][]).map(([key,icon,label]) => {
+                const count = key === "all" ? fihris.length : fihris.filter(item => fihrisType(item.title) === key).length;
+                return <button key={key} className={fihrisTab === key ? "fihrisTab active" : "fihrisTab"} onClick={() => setFihrisTab(key)}>{icon} {label} <b>({count})</b></button>;
+              })}
+            </div>
             <div className="fihrisList">
               {filteredFihris.map((item, i) => (
                 <button className="fihrisItem" key={i} onClick={() => goToFihris(item)}>
                   <span className="fihrisText">{item.title}</span>
-                  <small>ص. {item.printedPage} · PDF {item.pdfPage}</small>
+                  <small>ص. {item.printedPage ?? "—"} · PDF {item.pdfPage}</small>
                 </button>
               ))}
             </div>
