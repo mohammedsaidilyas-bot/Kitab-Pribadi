@@ -3,7 +3,7 @@ import { X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, List, Search } from "luc
 import { getFihrisForBook } from "../data/fihris";
 import { addHasyiah, loadHasyiah, type HasyiahNote, type HasyiahCategory } from "../data/hasyiah";
 import { loadAutoFihris } from "../data/autoFihris";
-import { loadEngineFihris, type EngineFihrisEntry } from "../data/fihrisEngine";
+import { loadEngineFihris } from "../data/fihrisEngine";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
