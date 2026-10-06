@@ -60,3 +60,24 @@ export function buildFihrisHierarchy<T extends { title: string; pdfPage: number;
 export function childrenOf(nodes: FihrisNode[], parentId?: string) {
   return nodes.filter(node => node.parentId === parentId);
 }
+
+export function validateHierarchy(nodes: FihrisNode[]) {
+  const failures: Array<{ id: string; reason: string }> = [];
+  const rank: Record<FihrisNode["kind"], number> = {
+    kitab: 0, bab: 1, fasal: 2, furu: 3, tanbih: 4, khatimah: 0, other: 0,
+  };
+  for (const node of nodes) {
+    if (node.parentId) {
+      const parent = nodes.find(item => item.id === node.parentId);
+      if (!parent) {
+        failures.push({ id: node.id, reason: "parent tidak ditemukan" });
+      } else if (node.kind !== "other" && parent.kind !== "other" && rank[node.kind] <= rank[parent.kind] && node.kind !== "khatimah") {
+        failures.push({ id: node.id, reason: "urutan hierarki tidak valid" });
+      }
+    }
+    if (node.depth < 0 || node.depth > 4) {
+      failures.push({ id: node.id, reason: "depth di luar rentang" });
+    }
+  }
+  return { passed: failures.length === 0, checked: nodes.length, failures };
+}
