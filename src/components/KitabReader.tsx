@@ -2,14 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, List, Search } from "lucide-react";
 import { getFihrisForBook, type FihrisEntry } from "../data/fihris";
 import { addHasyiah, loadHasyiah, type HasyiahNote, type HasyiahCategory } from "../data/hasyiah";
+import { loadAutoFihris } from "../data/autoFihris";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-type Props = { title: string; pdfUrl: string; onClose: () => void };
+type Props = { title: string; bookId: string; pdfUrl: string; onClose: () => void };
 type TurnDirection = "next" | "prev" | null;
 
-export function KitabReader({ title, pdfUrl, onClose }: Props) {
+export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
   const left = useRef<HTMLCanvasElement>(null);
   const right = useRef<HTMLCanvasElement>(null);
   const nextLeft = useRef<HTMLCanvasElement>(null);
@@ -69,7 +70,7 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
 
   const canNext = page + 2 <= total;
   const canPrev = page > 1;
-  const fihris = getFihrisForBook(title);
+  const storedFihris = loadAutoFihris(bookId);\n  const fihris = storedFihris.length > 0 ? storedFihris : getFihrisForBook(title);
   const filteredFihris = fihris.filter((item) => item.title.includes(fihrisQuery.trim()));
   const pageNotes = notes.filter(n => n.bookId === title && n.pdfPage === page);
   const saveNote = () => {
