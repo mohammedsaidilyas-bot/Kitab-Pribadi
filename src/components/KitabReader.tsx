@@ -43,7 +43,7 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
         const v = p.getViewport({ scale });
         c.width = v.width;
         c.height = v.height;
-        await p.render({ canvasContext: c.getContext("2d")!, viewport: v }).promise;
+        await p.render({ canvasContext: c.getContext("2d")!, viewport: v, canvas: c }).promise;
       };
 
       await Promise.all([
