@@ -31,7 +31,6 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
   const [quoteText, setQuoteText] = useState("");
   const [noteCategory, setNoteCategory] = useState<HasyiahCategory>("faedah");
   const [selectedNote, setSelectedNote] = useState<HasyiahNote | null>(null);
-  const [markerPage, setMarkerPage] = useState<number | null>(null);
   const pointerId = useRef<number | null>(null);
   const startX = useRef(0);
   const turnWidth = useRef(1);
@@ -131,17 +130,22 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
     }, 220);
   };
 
-  const addMarkerNote = (e: React.PointerEvent<HTMLDivElement>) => {
+  const addMarkerNote = (e: React.MouseEvent<HTMLDivElement>, pdfPage: number) => {
     if ((e.target as HTMLElement).closest("button,input,label,textarea,select,.turning-page")) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-    const n = addHasyiah({ bookId: title, pdfPage: page, x, y, quotedText: "", note: "Catatan baru", category: "faedah" });
+    const n = addHasyiah({ bookId: title, pdfPage, x, y, quotedText: "", note: "Catatan baru", category: "faedah" });
     setNotes(loadHasyiah());
     setSelectedNote(n);
-    setMarkerPage(page);
     setShowHasyiah(true);
   };
+
+  const renderMarkers = (pdfPage: number) => notes.filter(n => n.bookId === title && n.pdfPage === pdfPage).map((n, i) =>
+    <button key={n.id} className="hasyiahMarker" style={{ left: `${n.x * 100}%`, top: `${n.y * 100}%` }}
+      onClick={(e) => { e.stopPropagation(); setSelectedNote(n); setShowHasyiah(true); }}
+      aria-label={`Hasyiah ${i + 1}`}>{i + 1}</button>
+  );
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -179,8 +183,8 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
         <strong>{title}</strong>
         <div className="readercontrols">
           <button onClick={() => setScale((s) => Math.max(.7, s - .1))}><ZoomOut size={17} /></button>
-          {fihris.length > 0 && <button className="fihrisToggle" onClick={() => setShowFihris(true)}><List size={17} /> Fihris</button>
-          <button className="fihrisToggle" onClick={() => setShowHasyiah(true)}>✎ Hasyiah{pageNotes.length ? ` (${pageNotes.length})` : ""}</button>}
+          {fihris.length > 0 && <button className="fihrisToggle" onClick={() => setShowFihris(true)}><List size={17} /> Fihris</button>}
+          <button className="fihrisToggle" onClick={() => setShowHasyiah(true)}>✎ Hasyiah{pageNotes.length ? ` (${pageNotes.length})` : ""}</button>
           <span>{page}–{Math.min(page + 1, total)} / {total}</span>
           <button onClick={() => setScale((s) => Math.min(1.7, s + .1))}><ZoomIn size={17} /></button>
         </div>
@@ -231,13 +235,15 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
         onPointerCancel={onPointerCancel}
       >
         <button className="turn prev" onPointerDown={(e) => e.stopPropagation()} onClick={prev} disabled={!canPrev}><ChevronRight /></button>
-        <div className="physical-book" onDoubleClick={addMarkerNote}>
-          <div className="page-sheet left" style={turn === "prev" ? { clipPath: `polygon(${progress * 100}% 0, 100% 0, 100% 100%, ${progress * 100}% 100%)` } : undefined}>
+        <div className="physical-book">
+          <div className="page-sheet left" onDoubleClick={(e) => addMarkerNote(e, page + 1)} style={turn === "prev" ? { clipPath: `polygon(${progress * 100}% 0, 100% 0, 100% 100%, ${progress * 100}% 100%)` } : undefined}>
             <canvas ref={left} />
+            {renderMarkers(page + 1)}
           </div>
           <div className="spine" />
-          <div className="page-sheet right" style={turn === "next" ? { clipPath: `polygon(0 0, ${100 - progress * 100}% 0, ${100 - progress * 100}% 100%, 0 100%)` } : undefined}>
+          <div className="page-sheet right" onDoubleClick={(e) => addMarkerNote(e, page)} style={turn === "next" ? { clipPath: `polygon(0 0, ${100 - progress * 100}% 0, ${100 - progress * 100}% 100%, 0 100%)` } : undefined}>
             <canvas ref={right} />
+            {renderMarkers(page)}
           </div>
 
           <div className="target-pages" aria-hidden="true">
@@ -245,8 +251,6 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
             <div className="spine" />
             <div className="page-sheet right"><canvas ref={nextRight} /></div>
           </div>
-
-          {pageNotes.map((n, i) => <button key={n.id} className="hasyiahMarker" style={{ left: `${n.x * 100}%`, top: `${n.y * 100}%` }} onPointerDown={e=>e.stopPropagation()} onClick={()=>{setSelectedNote(n);setShowHasyiah(true);}} aria-label={`Hasyiah ${i+1}`}>{i+1}</button>)}
 
           {turn && turnImage && (
             <div
