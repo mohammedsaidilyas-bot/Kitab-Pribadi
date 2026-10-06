@@ -54,7 +54,7 @@ export default function App() {
     return note;
   }
 
-  if (!hydrated) return <div className="app"><main><div className="empty"><BookOpen size={34}/><h3>Menyiapkan perpustakaan...</h3><p>Memuat kitab yang tersimpan di perangkat.</p></div></main></div>;\n\n  if (active?.url) return <KitabReader title={active.name} pdfUrl={active.url} onClose={() => setActive(null)} />;
+  if (!hydrated) return <div className="app"><main><div className="empty"><BookOpen size={34}/><h3>Menyiapkan perpustakaan...</h3><p>Memuat kitab yang tersimpan di perangkat.</p></div></main></div>;\n\n  if (active?.url) return <KitabReader title={active.name} bookId={active.id} pdfUrl={active.url} onClose={() => setActive(null)} />;
 
   return <div className="app">
     <aside>
