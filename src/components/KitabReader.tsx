@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, List, Search } from "lucide-react";
-import { getFihrisForBook, type FihrisEntry } from "../data/fihris";
+import { getFihrisForBook } from "../data/fihris";
 import { addHasyiah, loadHasyiah, type HasyiahNote, type HasyiahCategory } from "../data/hasyiah";
 import { loadAutoFihris } from "../data/autoFihris";
 import * as pdfjsLib from "pdfjs-dist";
