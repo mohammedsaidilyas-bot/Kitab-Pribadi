@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, List, Search } from "lucide-react";
 import { getFihrisForBook } from "../data/fihris";
-import { addHasyiah, loadHasyiah, type HasyiahNote, type HasyiahCategory } from "../data/hasyiah";
+import { addHasyiah, updateHasyiah, deleteHasyiah, loadHasyiah, type HasyiahNote, type HasyiahCategory } from "../data/hasyiah";
 import { loadAutoFihris } from "../data/autoFihris";
 import { loadEngineFihris } from "../data/fihrisEngineV3";
 import { buildFihrisHierarchy, type FihrisNode } from "../data/fihrisHierarchy";
@@ -103,8 +103,49 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
   const pageNotes = notes.filter(n => n.bookId === title && n.pdfPage === page);
   const saveNote = () => {
     if (!noteText.trim()) return;
-    addHasyiah({ bookId: title, pdfPage: page, x: 0.5, y: 0.5, quotedText: quoteText.trim(), note: noteText.trim(), category: noteCategory });
-    setNotes(loadHasyiah()); setNoteText(""); setQuoteText(""); setShowHasyiah(false);
+    if (selectedNote) {
+      updateHasyiah(selectedNote.id, {
+        bookId: selectedNote.bookId,
+        pdfPage: selectedNote.pdfPage,
+        x: selectedNote.x,
+        y: selectedNote.y,
+        quotedText: quoteText.trim(),
+        note: noteText.trim(),
+        category: noteCategory,
+      });
+    } else {
+      addHasyiah({
+        bookId: title,
+        pdfPage: page,
+        x: 0.5,
+        y: 0.5,
+        quotedText: quoteText.trim(),
+        note: noteText.trim(),
+        category: noteCategory
+      });
+    }
+    setNotes(loadHasyiah());
+    setSelectedNote(null);
+    setNoteText("");
+    setQuoteText("");
+    setShowHasyiah(false);
+  };
+
+  const editNote = (note: HasyiahNote) => {
+    setSelectedNote(note);
+    setQuoteText(note.quotedText);
+    setNoteText(note.note);
+    setNoteCategory(note.category);
+    setShowHasyiah(true);
+  };
+
+  const removeNote = (note: HasyiahNote) => {
+    deleteHasyiah(note.id);
+    setNotes(loadHasyiah());
+    setSelectedNote(null);
+    setNoteText("");
+    setQuoteText("");
+    setShowHasyiah(false);
   };
 
   const goToFihris = (item: { pdfPage: number; targetPdfPage?: number }) => {
@@ -165,9 +206,12 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-    const n = addHasyiah({ bookId: title, pdfPage, x, y, quotedText: "", note: "Catatan baru", category: "faedah" });
+    const n = addHasyiah({ bookId: title, pdfPage, x, y, quotedText: "", note: "", category: "faedah" });
     setNotes(loadHasyiah());
     setSelectedNote(n);
+    setQuoteText("");
+    setNoteText("");
+    setNoteCategory("faedah");
     setShowHasyiah(true);
   };
 
@@ -223,8 +267,8 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
       {showHasyiah && (
         <div className="fihrisOverlay" onClick={() => setShowHasyiah(false)}><aside className="fihrisPanel" dir="rtl" onClick={e=>e.stopPropagation()}>
           <div className="fihrisHead"><div><span>حاشية</span><strong>Hasyiah PDF {page}</strong></div><button onClick={()=>setShowHasyiah(false)}><X size={19}/></button></div>
-          <div className="hasyiahForm"><textarea value={quoteText} onChange={e=>setQuoteText(e.target.value)} placeholder="Ibarat yang diberi catatan..." /><textarea value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Tulis Hasyiah..." /><select value={noteCategory} onChange={e=>setNoteCategory(e.target.value as HasyiahCategory)}><option value="faedah">Faedah</option><option value="syarah">Syarah & uraian</option><option value="makna">Makna & mufradat</option><option value="dalil">Dalil & rujukan</option><option value="muzakarah">Pertanyaan muzakarah</option><option value="tanbih">تنبيه</option><option value="isyak">إشكال</option><option value="jawab">جواب</option></select><button className="primary" onClick={saveNote}>Simpan Hasyiah</button></div>
-          {pageNotes.length>0 && <div className="fihrisList">{pageNotes.map(n=><button className="fihrisItem" key={n.id} onClick={()=>setSelectedNote(n)}><span className="fihrisText">✦ {n.note}</span><small>{n.category} · PDF {n.pdfPage}</small></button>)}</div>}
+          <div className="hasyiahForm"><textarea value={quoteText} onChange={e=>setQuoteText(e.target.value)} placeholder="Ibarat yang diberi catatan..." /><textarea value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Tulis Hasyiah..." /><select value={noteCategory} onChange={e=>setNoteCategory(e.target.value as HasyiahCategory)}><option value="faedah">Faedah</option><option value="syarah">Syarah & uraian</option><option value="makna">Makna & mufradat</option><option value="dalil">Dalil & rujukan</option><option value="muzakarah">Pertanyaan muzakarah</option><option value="tanbih">تنبيه</option><option value="isyak">إشكال</option><option value="jawab">جواب</option></select><button className="primary" onClick={saveNote}>{selectedNote ? "Perbarui Hasyiah" : "Simpan Hasyiah"}</button>{selectedNote && <button onClick={()=>removeNote(selectedNote)}>Hapus Hasyiah</button>}</div>
+          {pageNotes.length>0 && <div className="fihrisList">{pageNotes.map(n=><button className="fihrisItem" key={n.id} onClick={()=>editNote(n)}><span className="fihrisText">✦ {n.note || "Hasyiah baru"}</span><small>{n.category} · PDF {n.pdfPage}</small></button>)}</div>}
         </aside></div>
       )}
       {selectedNote && <div className="fihrisOverlay" onClick={()=>setSelectedNote(null)}><aside className="fihrisPanel" dir="rtl" onClick={e=>e.stopPropagation()}><div className="fihrisHead"><div><span>الحاشية</span><strong>Detail Hasyiah</strong></div><button onClick={()=>setSelectedNote(null)}><X size={19}/></button></div><p className="hasyiahQuote">{selectedNote.quotedText || "Tidak ada kutipan ibarat."}</p><p className="hasyiahBody">{selectedNote.note}</p></aside></div>}
