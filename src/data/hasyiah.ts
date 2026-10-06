@@ -31,6 +31,19 @@ export function addHasyiah(input: Omit<HasyiahNote, "id" | "createdAt" | "update
   return note;
 }
 
+export function updateHasyiah(id: string, patch: Partial<Omit<HasyiahNote, "id" | "createdAt" | "updatedAt">>) {
+  const now = new Date().toISOString();
+  const updated = loadHasyiah().map((note) =>
+    note.id === id ? { ...note, ...patch, updatedAt: now } : note
+  );
+  saveHasyiah(updated);
+  return updated.find((note) => note.id === id) ?? null;
+}
+
+export function deleteHasyiah(id: string) {
+  saveHasyiah(loadHasyiah().filter((note) => note.id !== id));
+}
+
 export function notesForPage(bookId: string, pdfPage: number) {
   return loadHasyiah().filter(n => n.bookId === bookId && n.pdfPage === pdfPage);
 }
