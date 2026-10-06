@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, List, Search } from "lucide-react";
+import { getFihrisForBook, type FihrisEntry } from "../data/fihris";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -21,6 +22,8 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
   const [progress, setProgress] = useState(0);
   const [turnImage, setTurnImage] = useState<string | null>(null);
   const [animating, setAnimating] = useState(false);
+  const [showFihris, setShowFihris] = useState(false);
+  const [fihrisQuery, setFihrisQuery] = useState("");
   const pointerId = useRef<number | null>(null);
   const startX = useRef(0);
   const turnWidth = useRef(1);
@@ -59,6 +62,13 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
 
   const canNext = page + 2 <= total;
   const canPrev = page > 1;
+  const fihris = getFihrisForBook(title);
+  const filteredFihris = fihris.filter((item) => item.title.includes(fihrisQuery.trim()));
+  const goToFihris = (item: FihrisEntry) => {
+    const target = item.pdfPage % 2 === 0 ? item.pdfPage - 1 : item.pdfPage;
+    setPage(Math.max(1, target));
+    setShowFihris(false);
+  };
 
   const beginTurn = (direction: TurnDirection, x: number, id: number) => {
     if ((direction === "next" && !canNext) || (direction === "prev" && !canPrev) || animating) return;
@@ -140,10 +150,37 @@ export function KitabReader({ title, pdfUrl, onClose }: Props) {
         <strong>{title}</strong>
         <div className="readercontrols">
           <button onClick={() => setScale((s) => Math.max(.7, s - .1))}><ZoomOut size={17} /></button>
+          {fihris.length > 0 && <button className="fihrisToggle" onClick={() => setShowFihris(true)}><List size={17} /> Fihris</button>}
           <span>{page}–{Math.min(page + 1, total)} / {total}</span>
           <button onClick={() => setScale((s) => Math.min(1.7, s + .1))}><ZoomIn size={17} /></button>
         </div>
       </header>
+
+      {showFihris && (
+        <div className="fihrisOverlay" onClick={() => setShowFihris(false)}>
+          <aside className="fihrisPanel" dir="rtl" onClick={(e) => e.stopPropagation()}>
+            <div className="fihrisHead">
+              <div>
+                <span>فهرس المحتويات</span>
+                <strong>Daftar Isi Kitab</strong>
+              </div>
+              <button onClick={() => setShowFihris(false)}><X size={19} /></button>
+            </div>
+            <label className="fihrisSearch" dir="rtl">
+              <Search size={16} />
+              <input value={fihrisQuery} onChange={(e) => setFihrisQuery(e.target.value)} placeholder="Cari bab atau فصل..." />
+            </label>
+            <div className="fihrisList">
+              {filteredFihris.map((item, i) => (
+                <button className="fihrisItem" key={i} onClick={() => goToFihris(item)}>
+                  <span className="fihrisText">{item.title}</span>
+                  <small>ص. {item.printedPage} · PDF {item.pdfPage}</small>
+                </button>
+              ))}
+            </div>
+          </aside>
+        </div>
+      )}
 
       <div
         ref={stage}
