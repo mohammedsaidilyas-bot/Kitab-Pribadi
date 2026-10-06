@@ -48,12 +48,12 @@ function normalizeArabic(text: string) {
 
 function headingKind(line: string) {
   const s = normalizeArabic(line);
-  if (/^(فهرس|الفهرس|فهارس)/.test(s)) return "toc";
-  if (/^(كتاب|الكتاب)\b/.test(s)) return "kitab";
-  if (/^(باب|الأبواب)\b/.test(s)) return "bab";
-  if (/^(فصل|الفصل)\b/.test(s)) return "fasal";
-  if (/^(فرع|الفروع)\b/.test(s)) return "furu";
-  if (/^(تنبيه|فائدة|مهم|مهمة|ملاحظة)\b/.test(s)) return "tanbih";
+  if (/^(فهرس|الفهرس|فهارس|المحتويات|المحتويات العامة)/.test(s)) return "toc";
+  if (/^(كتاب|الكتاب|كتب)\b/.test(s)) return "kitab";
+  if (/^(باب|الأبواب|ابواب)\b/.test(s)) return "bab";
+  if (/^(فصل|الفصل|فصول)\b/.test(s)) return "fasal";
+  if (/^(فرع|الفروع|فروع)\b/.test(s)) return "furu";
+  if (/^(تنبيه|فائدة|فوائد|مهم|مهمة|ملاحظة|مسألة|مسائل|فائدة مهمة)\b/.test(s)) return "tanbih";
   if (/^(خاتمة|الخاتمة)\b/.test(s)) return "khatimah";
   return null;
 }
