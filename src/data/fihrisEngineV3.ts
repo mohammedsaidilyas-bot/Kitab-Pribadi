@@ -123,7 +123,7 @@ async function extractTextPage(pdf: pdfjsLib.PDFDocumentProxy, pageNo: number) {
   return content.items.map(item => "str" in item ? item.str : "").join(" ");
 }
 
-async async function buildPrintedPageMap(pdf: pdfjsLib.PDFDocumentProxy) {
+async function buildPrintedPageMap(pdf: pdfjsLib.PDFDocumentProxy) {
   const map = new Map<number, number>();
   for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
     const text = await extractTextPage(pdf, pageNo);
