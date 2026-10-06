@@ -82,8 +82,9 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
 
   const canNext = page + 2 <= total;
   const canPrev = page > 1;
+  const verifiedFihris = loadEngineFihris(bookId);
   const storedFihris = loadAutoFihris(bookId);
-  const fihris = storedFihris.length > 0 ? storedFihris : getFihrisForBook(title);
+  const fihris = verifiedFihris.length > 0 ? verifiedFihris : (storedFihris.length > 0 ? storedFihris : getFihrisForBook(title));
   const filteredFihris = fihris.filter((item) => (fihrisTab === "all" || fihrisType(item.title) === fihrisTab) && item.title.includes(fihrisQuery.trim()));
   const pageNotes = notes.filter(n => n.bookId === title && n.pdfPage === page);
   const saveNote = () => {
