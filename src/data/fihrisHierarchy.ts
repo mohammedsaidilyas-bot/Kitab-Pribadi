@@ -19,8 +19,16 @@ export function classifyFihris(title: string): FihrisNode["kind"] {
   return "other";
 }
 
-function depthOf(kind: FihrisNode["kind"]) {
-  return kind === "kitab" ? 0 : kind === "bab" ? 1 : kind === "fasal" ? 2 : kind === "furu" || kind === "tanbih" ? 3 : 0;
+function depthOf(kind: FihrisNode["kind"], stack: FihrisNode[]) {
+  if (kind === "other") return stack.length ? stack[stack.length - 1].depth : 0;
+  const ranks: Record<FihrisNode["kind"], number> = {
+    kitab: 0, bab: 1, fasal: 2, furu: 3, tanbih: 4, khatimah: 0, other: 0,
+  };
+  const rank = ranks[kind];
+  const previous = stack.length ? stack[stack.length - 1] : undefined;
+  if (!previous) return rank === 0 ? 0 : 0;
+  if (kind === "khatimah") return 0;
+  return Math.min(rank, previous.depth + 1);
 }
 
 /**
@@ -32,7 +40,7 @@ export function buildFihrisHierarchy<T extends { title: string; pdfPage: number;
   const stack: FihrisNode[] = [];
   return items.map((item, index) => {
     const kind = classifyFihris(item.title);
-    const depth = depthOf(kind);
+    const depth = depthOf(kind, stack);
     while (stack.length && stack[stack.length - 1].depth >= depth) stack.pop();
     const parent = stack.length ? stack[stack.length - 1] : undefined;
     const node: FihrisNode = {
