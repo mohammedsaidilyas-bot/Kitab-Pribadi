@@ -3,7 +3,7 @@ import { BookOpen, Library, Search, Settings, Bookmark, PenLine, Upload, ShieldC
 import { KitabReader } from "./components/KitabReader";
 import { addHasyiah, loadHasyiah, HasyiahNote } from "./data/hasyiah";
 import { loadPdf, savePdf } from "./data/pdfStorage";
-import { buildAutoFihris } from "./data/autoFihris";
+import { buildVerifiedFihris } from "./data/fihrisEngine";
 
 type Book = { id: string; name: string; size: number; addedAt: string; url?: string };
 const KEY = "kitab-pribadi-books";
@@ -36,7 +36,7 @@ export default function App() {
 
   function addPdf(file: File) {
     if (file.type !== "application/pdf") return alert("Silakan pilih file PDF.");
-    setBooks(v => [{id:crypto.randomUUID(),name:file.name.replace(/\.pdf$/i,""),size:file.size,addedAt:new Date().toISOString(),url},...v]);\n    void buildAutoFihris(id, url).catch(() => {});
+    setBooks(v => [{id:crypto.randomUUID(),name:file.name.replace(/\.pdf$/i,""),size:file.size,addedAt:new Date().toISOString(),url},...v]);\n    void buildVerifiedFihris(id, url).catch(() => {});
   }
 
   function createNote() {
