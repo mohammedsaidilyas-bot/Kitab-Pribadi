@@ -32,3 +32,5 @@
 
 .fihrisTabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:thin}.fihrisTab{flex:0 0 auto;border:1px solid #5a412b;background:#24180f;color:#d9c7ad;border-radius:8px;padding:9px 12px;font:600 13px Inter,sans-serif;white-space:nowrap}.fihrisTab:hover{background:#332216;border-color:#80603e}.fihrisTab.active{background:#8a3f12;border-color:#b97843;color:#fff4df}.fihrisTab b{font-weight:700}.fihrisTabs::-webkit-scrollbar{height:5px}.fihrisTabs::-webkit-scrollbar-thumb{background:#5a412b;border-radius:9px}
 @media(max-width:800px){.fihrisTabs{gap:6px}.fihrisTab{padding:8px 10px;font-size:12px}}
+
+.fihrisItem.depth-0{border-right:3px solid #9a6a35;background:#2a1b10}.fihrisItem.depth-1{margin-right:14px;border-right:2px solid #72502f}.fihrisItem.depth-2{margin-right:28px}.fihrisItem.depth-3{margin-right:42px;border-right:1px dashed #6b4c30}.fihrisItem.depth-0 .fihrisText{font-weight:700;color:#f0d6a8}.fihrisItem.depth-1 .fihrisText{font-weight:700}.fihrisItem.depth-2 .fihrisText{font-size:17px}.fihrisItem.depth-3 .fihrisText{font-size:16px;color:#d7c1a4}
