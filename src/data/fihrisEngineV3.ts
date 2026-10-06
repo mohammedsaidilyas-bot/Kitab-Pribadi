@@ -90,8 +90,7 @@ async function recognize(worker: Worker, canvas: HTMLCanvasElement) {
 }
 
 function splitLines(text: string) {
-  return text.split(/\r?
-/).map(x => x.replace(/\s+/g, " ").trim()).filter(Boolean);
+  return text.split(/\r?\n/).map(x => x.replace(/\s+/g, " ").trim()).filter(Boolean);
 }
 
 
@@ -308,6 +307,7 @@ export async function buildVerifiedFihris(bookId: string, pdfUrl: string) {
           sourcePage: pageNo,
         });
       }
+    }
     // Build a real printed-page → PDF-page map before accepting any target.
     // For image-only PDFs this map may be sparse; those entries remain review-only.
     const pageMap = await buildPrintedPageMap(pdf);
