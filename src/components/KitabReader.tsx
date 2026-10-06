@@ -81,8 +81,9 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
 
   const canNext = page + 2 <= total;
   const canPrev = page > 1;
-  const storedFihris = loadAutoFihris(bookId);\n  const fihris = storedFihris.length > 0 ? storedFihris : getFihrisForBook(title);
-  const filteredFihris = fihris.filter((item) => item.title.includes(fihrisQuery.trim()));
+  const storedFihris = loadAutoFihris(bookId);
+  const fihris = storedFihris.length > 0 ? storedFihris : getFihrisForBook(title);
+  const filteredFihris = fihris.filter((item) => (fihrisTab === "all" || fihrisType(item.title) === fihrisTab) && item.title.includes(fihrisQuery.trim()));
   const pageNotes = notes.filter(n => n.bookId === title && n.pdfPage === page);
   const saveNote = () => {
     if (!noteText.trim()) return;
@@ -90,7 +91,7 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
     setNotes(loadHasyiah()); setNoteText(""); setQuoteText(""); setShowHasyiah(false);
   };
 
-  const goToFihris = (item: FihrisEntry) => {
+  const goToFihris = (item: { pdfPage: number }) => {
     const target = item.pdfPage % 2 === 0 ? item.pdfPage - 1 : item.pdfPage;
     setPage(Math.max(1, target));
     setShowFihris(false);
