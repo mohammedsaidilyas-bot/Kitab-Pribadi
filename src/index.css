@@ -22,3 +22,6 @@
   .turning-page{top:7px;bottom:7px;width:calc(50% - 3.5px)}
   .turning-page.next{right:7px}.turning-page.prev{left:7px}
 }
+
+
+.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:20px}.modal-card{width:min(480px,94vw);padding:24px;border:1px solid #69492c;border-radius:16px;background:#21170f;box-shadow:0 25px 70px #000b}.modal-card p{color:#ad997f;line-height:1.6}.modal-card button{margin-left:8px}.modal-card .primary{background:#9a6a35;color:#fff5e6}
