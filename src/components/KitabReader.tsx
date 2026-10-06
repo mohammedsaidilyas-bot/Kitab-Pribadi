@@ -12,7 +12,7 @@ type Props = { title: string; bookId: string; pdfUrl: string; onClose: () => voi
 type TurnDirection = "next" | "prev" | null;
 type FihrisTab = "all" | "kitab" | "bab" | "fasal" | "furu" | "tanbih";
 
-function fihrisType(title: string): FihrisTab {
+function fihrisDepth(title: string) {\n  if (/^(كتاب|الكتاب)\\b/.test(title)) return 0;\n  if (/^(باب|الأبواب)\\b/.test(title)) return 1;\n  if (/^(فصل|الفصل)\\b/.test(title)) return 2;\n  if (/^(فرع|الفروع)\\b/.test(title)) return 3;\n  if (/^(تنبيه|فائدة|مهم|مهمة|ملاحظة)\\b/.test(title)) return 3;\n  if (/^(خاتمة|الخاتمة)\\b/.test(title)) return 0;\n  return 0;\n}\n\nfunction fihrisType(title: string): FihrisTab {
   if (/^(تنبيه|فائدة|مهمة|مهم)/.test(title)) return "tanbih";
   if (/^(فرع|فروع)/.test(title)) return "furu";
   if (/^(فصل)/.test(title)) return "fasal";
