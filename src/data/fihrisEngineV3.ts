@@ -195,6 +195,23 @@ function derivePageCalibration(anchors: Array<{ printedPage: number; pdfPage: nu
   return bestCount >= 2 && confidence >= 0.6 ? { offset: bestOffset, confidence } : null;
 }
 
+function mergeTocLines(lines: string[]) {
+  const result: Array<{ title: string; printedPage?: number }> = [];
+  for (const raw of lines) {
+    const parsed = parseTocLine(raw);
+    if (parsed.printedPage) {
+      result.push(parsed);
+      continue;
+    }
+    const text = raw.trim();
+    if (!text) continue;
+    const last = result[result.length - 1];
+    if (last && last.printedPage === undefined) last.title = (last.title + " " + text).trim();
+    else result.push({ title: text });
+  }
+  return result;
+}
+
 function isUsefulHeading(line: string) {
   const kind = headingKind(line);
   return Boolean(kind && kind !== "toc" && line.length >= 3 && line.length <= 220);
@@ -251,9 +268,8 @@ export async function buildVerifiedFihris(bookId: string, pdfUrl: string) {
       const text = await recognize(worker, await pageImage(pdf, pageNo, 1.6));
       if (!/فهرس|المحتويات|المحتویات/i.test(normalizeArabic(text))) continue;
 
-      for (const raw of splitLines(text)) {
-        const parsed = parseTocLine(raw);
-        const printedPage = parsed.printedPage ?? extractPrintedPage(raw);
+      for (const parsed of mergeTocLines(splitLines(text))) {
+        const printedPage = parsed.printedPage;
         const title = parsed.title;
         if (!isUsefulHeading(title) || !printedPage) continue;
 
@@ -269,8 +285,6 @@ export async function buildVerifiedFihris(bookId: string, pdfUrl: string) {
           sourcePage: pageNo,
         });
       }
-    }
-
     // Build a real printed-page → PDF-page map before accepting any target.
     // For image-only PDFs this map may be sparse; those entries remain review-only.
     const pageMap = await buildPrintedPageMap(pdf);
