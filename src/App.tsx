@@ -2,19 +2,36 @@ import { useEffect, useState } from "react";
 import { BookOpen, Library, Search, Settings, Bookmark, PenLine, Upload, ShieldCheck, Plus } from "lucide-react";
 import { KitabReader } from "./components/KitabReader";
 import { addHasyiah, loadHasyiah, HasyiahNote } from "./data/hasyiah";
+import { loadPdf, savePdf } from "./data/pdfStorage";
 
 type Book = { id: string; name: string; size: number; addedAt: string; url?: string };
 const KEY = "kitab-pribadi-books";
+const BOOK_META_KEY = "kitab-pribadi-books-meta";
 const menu = [["Perpustakaan", Library],["Terakhir Dibaca", BookOpen],["Hasyiah", PenLine],["Bookmark", Bookmark]] as const;
 
 export default function App() {
   const [admin, setAdmin] = useState(false);
-  const [books, setBooks] = useState<Book[]>(() => JSON.parse(localStorage.getItem(KEY) || "[]"));
+  const [books, setBooks] = useState<Book[]>(() => JSON.parse(localStorage.getItem(BOOK_META_KEY) || localStorage.getItem(KEY) || "[]"));
+  const [hydrated, setHydrated] = useState(false);
   const [active, setActive] = useState<Book | null>(null);
   const [section, setSection] = useState("Perpustakaan");
   const [notes, setNotes] = useState<HasyiahNote[]>(() => loadHasyiah());
   const [showNote, setShowNote] = useState(false);
-  useEffect(() => localStorage.setItem(KEY, JSON.stringify(books)), [books]);
+  useEffect(() => { localStorage.setItem(BOOK_META_KEY, JSON.stringify(books.map(({url, ...meta}) => meta))); }, [books]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const stored = JSON.parse(localStorage.getItem(BOOK_META_KEY) || localStorage.getItem(KEY) || "[]") as Book[];
+      const hydratedBooks: Book[] = [];
+      for (const book of stored) {
+        const blob = await loadPdf(book.id).catch(() => null);
+        if (blob) hydratedBooks.push({...book, url: URL.createObjectURL(blob)});
+        else hydratedBooks.push(book);
+      }
+      if (!cancelled) { setBooks(hydratedBooks); setHydrated(true); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   function addPdf(file: File) {
     if (file.type !== "application/pdf") return alert("Silakan pilih file PDF.");
@@ -36,7 +53,7 @@ export default function App() {
     return note;
   }
 
-  if (active?.url) return <KitabReader title={active.name} pdfUrl={active.url} onClose={() => setActive(null)} />;
+  if (!hydrated) return <div className="app"><main><div className="empty"><BookOpen size={34}/><h3>Menyiapkan perpustakaan...</h3><p>Memuat kitab yang tersimpan di perangkat.</p></div></main></div>;\n\n  if (active?.url) return <KitabReader title={active.name} pdfUrl={active.url} onClose={() => setActive(null)} />;
 
   return <div className="app">
     <aside>
