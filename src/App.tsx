@@ -34,9 +34,13 @@ export default function App() {
     return () => { cancelled = true; };
   }, []);
 
-  function addPdf(file: File) {
+  async function addPdf(file: File) {
     if (file.type !== "application/pdf") return alert("Silakan pilih file PDF.");
-    setBooks(v => [{id:crypto.randomUUID(),name:file.name.replace(/\.pdf$/i,""),size:file.size,addedAt:new Date().toISOString(),url},...v]);\n    void buildVerifiedFihris(id, url).catch(() => {});
+    const id = crypto.randomUUID();
+    await savePdf(id, file);
+    const url = URL.createObjectURL(file);
+    setBooks(v => [{id,name:file.name.replace(/\.pdf$/i,""),size:file.size,addedAt:new Date().toISOString(),url},...v]);
+    void buildVerifiedFihris(id, url).catch(() => {});
   }
 
   function createNote() {
@@ -54,7 +58,9 @@ export default function App() {
     return note;
   }
 
-  if (!hydrated) return <div className="app"><main><div className="empty"><BookOpen size={34}/><h3>Menyiapkan perpustakaan...</h3><p>Memuat kitab yang tersimpan di perangkat.</p></div></main></div>;\n\n  if (active?.url) return <KitabReader title={active.name} bookId={active.id} pdfUrl={active.url} onClose={() => setActive(null)} />;
+  if (!hydrated) return <div className="app"><main><div className="empty"><BookOpen size={34}/><h3>Menyiapkan perpustakaan...</h3><p>Memuat kitab yang tersimpan di perangkat.</p></div></main></div>;
+
+  if (active?.url) return <KitabReader title={active.name} bookId={active.id} pdfUrl={active.url} onClose={() => setActive(null)} />;
 
   return <div className="app">
     <aside>
