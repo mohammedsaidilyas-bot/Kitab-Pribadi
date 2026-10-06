@@ -124,16 +124,24 @@ async function extractTextPage(pdf: pdfjsLib.PDFDocumentProxy, pageNo: number) {
   return content.items.map(item => "str" in item ? item.str : "").join(" ");
 }
 
-async function buildPrintedPageMap(pdf: pdfjsLib.PDFDocumentProxy) {
+async async function buildPrintedPageMap(pdf: pdfjsLib.PDFDocumentProxy) {
   const map = new Map<number, number>();
   for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
     const text = await extractTextPage(pdf, pageNo);
-    const nums = numbersFromText(text);
-    const plausible = nums.filter(n => n <= pdf.numPages + 100);
-    if (plausible.length) {
-      // Prefer the final plausible number: page numbers are commonly at a footer/header.
-      map.set(plausible[plausible.length - 1], pageNo);
-    }
+    const nums = numbersFromText(text).filter(n => n <= pdf.numPages + 100);
+    if (!nums.length) continue;
+
+    // Prefer numbers near the beginning/end of the extracted text because
+    // printed folio numbers usually live in a header or footer. If several
+    // candidates remain, retain the one closest to the document edge.
+    const tokens = normalizeDigits(text).split(/\s+/).filter(Boolean);
+    const candidates = nums.map(n => {
+      const index = tokens.findIndex(t => t === String(n));
+      const edgeDistance = Math.min(index < 0 ? 9999 : index, Math.max(0, tokens.length - 1 - (index < 0 ? 0 : index)));
+      return { n, edgeDistance };
+    }).sort((a, b) => a.edgeDistance - b.edgeDistance);
+
+    if (candidates[0]) map.set(candidates[0].n, pageNo);
   }
   return map;
 }
