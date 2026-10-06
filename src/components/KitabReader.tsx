@@ -3,6 +3,7 @@ import { X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, List, Search } from "luc
 import { getFihrisForBook } from "../data/fihris";
 import { addHasyiah, loadHasyiah, type HasyiahNote, type HasyiahCategory } from "../data/hasyiah";
 import { loadAutoFihris } from "../data/autoFihris";
+import { loadEngineFihris, type EngineFihrisEntry } from "../data/fihrisEngine";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -236,7 +237,7 @@ export function KitabReader({ title, bookId, pdfUrl, onClose }: Props) {
               {filteredFihris.map((item, i) => (
                 <button className="fihrisItem" key={i} onClick={() => goToFihris(item)}>
                   <span className="fihrisText">{item.title}</span>
-                  <small>ص. {item.printedPage ?? "—"} · PDF {item.pdfPage}</small>
+                  <small>ص. {item.printedPage ?? "—"} · PDF {item.pdfPage}{("status" in item && item.status === "review") ? " · perlu verifikasi" : ""}</small>
                 </button>
               ))}
             </div>
