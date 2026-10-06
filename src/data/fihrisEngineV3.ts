@@ -203,11 +203,26 @@ function mergeTocLines(lines: string[]) {
       result.push(parsed);
       continue;
     }
+
     const text = raw.trim();
     if (!text) continue;
+
+    // A structural heading always starts a new entry. Never merge it into
+    // the preceding OCR fragment, even when OCR lost the page number.
+    const structural = headingKind(text);
     const last = result[result.length - 1];
-    if (last && last.printedPage === undefined) last.title = (last.title + " " + text).trim();
-    else result.push({ title: text });
+    if (structural && structural !== "toc") {
+      result.push({ title: text });
+      continue;
+    }
+
+    // Only merge a fragment when the previous entry has no page number yet.
+    // This prevents two complete TOC entries from being accidentally joined.
+    if (last && last.printedPage === undefined) {
+      last.title = (last.title + " " + text).trim();
+    } else {
+      result.push({ title: text });
+    }
   }
   return result;
 }
