@@ -25,3 +25,5 @@
 
 
 .modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:20px}.modal-card{width:min(480px,94vw);padding:24px;border:1px solid #69492c;border-radius:16px;background:#21170f;box-shadow:0 25px 70px #000b}.modal-card p{color:#ad997f;line-height:1.6}.modal-card button{margin-left:8px}.modal-card .primary{background:#9a6a35;color:#fff5e6}
+
+.hasyiahForm{display:flex;flex-direction:column;gap:10px;margin:16px 0}.hasyiahForm textarea,.hasyiahForm select{width:100%;border:1px solid #4d3826;border-radius:10px;background:#24180f;color:#eadbc4;padding:11px;font:14px Inter,sans-serif;outline:none}.hasyiahForm textarea{min-height:90px;resize:vertical}.hasyiahForm textarea:first-child{min-height:70px}.hasyiahForm select{direction:rtl}.hasyiahQuote{padding:14px;border-right:3px solid #9a6a35;background:#24180f;color:#d8c3a5;font-family:Amiri,serif;line-height:1.8}.hasyiahBody{white-space:pre-wrap;color:#eee4d3;line-height:1.8}
