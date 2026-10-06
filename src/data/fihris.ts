@@ -95,3 +95,32 @@ export function validateFihrisRegression(entries: FihrisEntry[]) {
   }
   return { passed: failures.length === 0, checked: NAYATUZ_ZAIN_REGRESSION.length, failures };
 }
+
+
+export type FihrisQualityReport = {
+  status: "lulus" | "perlu-review" | "bermasalah";
+  pageChecked: number;
+  hierarchyChecked: number;
+  pageFailures: number;
+  hierarchyFailures: number;
+};
+
+export function buildFihrisQualityReport(
+  entries: FihrisEntry[],
+  hierarchyReport: { passed: boolean; checked: number; failures: unknown[] },
+) : FihrisQualityReport {
+  const pageFailures = entries.filter(entry => entry.pdfPage <= 0 || entry.printedPage <= 0).length;
+  const hierarchyFailures = hierarchyReport.failures.length;
+  const status = pageFailures > 0 || hierarchyFailures > 0
+    ? "bermasalah"
+    : entries.length === 0 || !hierarchyReport.passed
+      ? "perlu-review"
+      : "lulus";
+  return {
+    status,
+    pageChecked: entries.length,
+    hierarchyChecked: hierarchyReport.checked,
+    pageFailures,
+    hierarchyFailures,
+  };
+}
