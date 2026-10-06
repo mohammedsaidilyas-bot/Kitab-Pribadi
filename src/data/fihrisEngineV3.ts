@@ -59,11 +59,19 @@ function headingKind(line: string) {
 }
 
 function extractPrintedPage(line: string): number | undefined {
-  const normalized = normalizeDigits(line).replace(/[\s·•|]+/g, " ").trim();
+  const normalized = normalizeDigits(line).replace(/[\s·•|…]+/g, " ").trim();
   const matches = normalized.match(/(?:^|\s)(\d{1,4})\s*$/);
   if (!matches) return undefined;
   const n = Number(matches[1]);
   return n > 0 && n < 10000 ? n : undefined;
+}
+
+function parseTocLine(raw: string) {
+  const normalized = normalizeDigits(raw).replace(/[·•|…]+/g, " ").replace(/\s+/g, " ").trim();
+  const match = normalized.match(/^(.*?)[\s.]+(\d{1,4})$/);
+  if (!match) return { title: raw.trim(), printedPage: undefined as number | undefined };
+  const n = Number(match[2]);
+  return { title: match[1].replace(/[.·•|…]+$/g, "").trim(), printedPage: n > 0 && n < 10000 ? n : undefined };
 }
 
 async function pageImage(pdf: pdfjsLib.PDFDocumentProxy, pageNo: number, scale = 1.5) {
@@ -244,8 +252,9 @@ export async function buildVerifiedFihris(bookId: string, pdfUrl: string) {
       if (!/فهرس|المحتويات|المحتویات/i.test(normalizeArabic(text))) continue;
 
       for (const raw of splitLines(text)) {
-        const printedPage = extractPrintedPage(raw);
-        const title = raw.replace(/[٠-٩۰-۹]+\s*$/, "").replace(/[|·•]+$/, "").trim();
+        const parsed = parseTocLine(raw);
+        const printedPage = parsed.printedPage ?? extractPrintedPage(raw);
+        const title = parsed.title;
         if (!isUsefulHeading(title) || !printedPage) continue;
 
         const duplicate = entries.some(e => normalizeArabic(e.title) === normalizeArabic(title) && e.printedPage === printedPage);
@@ -262,7 +271,7 @@ export async function buildVerifiedFihris(bookId: string, pdfUrl: string) {
       }
     }
 
-    // Calibrate a dominant printed-page offset from several observed anchors.\n    // This is only a calibration hint; title matching still has final authority.\n    const anchors = entries\n      .map(e => pageMapAnchorFromEntry(e))\n      .filter((x): x is { printedPage: number; pdfPage: number } => Boolean(x));\n    const calibration = derivePageCalibration(anchors);\n\n    // Build a real printed-page → PDF-page map before accepting any target.
+    // Build a real printed-page → PDF-page map before accepting any target.
     // For image-only PDFs this map may be sparse; those entries remain review-only.
     const pageMap = await buildPrintedPageMap(pdf);
     const validated: EngineFihrisEntry[] = [];
