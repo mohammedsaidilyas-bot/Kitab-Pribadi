@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BookOpen, Library, Search, Settings, Bookmark, PenLine, Upload, ShieldCheck, Plus } from "lucide-react";
 import { KitabReader } from "./components/KitabReader";
-import { addHasyiah, loadHasyiah, HasyiahNote } from "./data/hasyiah";
+import { addHasyiah, loadHasyiah, type HasyiahNote } from "./data/hasyiah";
 import { loadPdf, savePdf } from "./data/pdfStorage";
 import { buildVerifiedFihris } from "./data/fihrisEngine";
 
